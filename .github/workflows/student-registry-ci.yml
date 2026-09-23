@@ -30,14 +30,27 @@ jobs:
 
             - name: Wait for application
               run: |
-                for attempt in {1..20}; do
-                    if curl --fail -- silent http://localhost:8080/ > /dev/null; then
-                        exit 0
-                    fi
-                    sleep 1
-                done
-                echo "Application did not start"
-                exit 1
+                  for attempt in {1..20}; do
+                      if curl --fail -- silent http://localhost:8080/ > /dev/null; then
+                          exit 0
+                      fi
+                      sleep 1
+                  done
+                  echo "Application did not start"
+                  exit 1
 
             - name: Run tests
               run: npm test
+
+    deploy:
+        needs: test
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Deploy to Render
+              uses: johnbeynon/render-deploy-action@v0.0.8
+              with:
+                  service-id: ${{ secrets.SERVICE_ID }}
+                  api-key: ${{ secrets.RENDER_TOKEN }}
+                  wait-for-success: true
